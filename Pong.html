@@ -1,113 +1,112 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <link rel="shortcut icon" type="image/x-icon" href="./pong.ico">
+    <title>Pong - 2 P</title>
 
-<head>
-  <link rel="shortcut icon" type="image/x-icon" href="./pong.ico">
-  <title>Pong - 2 P</title>
-
-  <style>
-    canvas {
-      position: absolute;
-      margin: auto;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-    }
-  </style>
-</head>
-
-<body>
-  <script src="./Classes.js"></script>
-  <script>
-    const Width = 700, Height = 557, pi = Math.PI;
-    const Up = 'ArrowUp', Down = 'ArrowDown', W = 'w', S = 's', Pause = 'p';
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = Width;
-    canvas.height = Height;
-    document.body.appendChild(canvas);
-    ctx.font = '20px Alpha';
-
-    const audioBeep = new Audio("./assets/beep.wav");
-
-    let player1Score = 0, player2Score = 0;
-    const keystate = {};
-    
-    const player1 = new User(keystate, W, S), player2 = new User(keystate, Up, Down)
-    const ball = new Ball();
-    
-    const init = () => {
-      player1.x = player1.width;
-      player1.y = (Height - player1.height) / 2;
-
-      player2.x = Width - (player1.width + player2.width);
-      player2.y = (Height - player2.height) / 2;
-
-      ball.serve(1, player1, player2);
-    };
-
-    const draw = () => {
-      ctx.fillRect(0, 0, Width, Height);
-      ctx.save();
-      ctx.fillStyle = "#ffffff";
-
-      player1.draw();
-      player2.draw();
-      ball.draw();
-
-      const w = 4, x = (Width - w) * 0.5, step = Height / 20;
-      let y = 0;
-      while (y < Height) {
-        ctx.fillRect(x, y + step * 0.25, w, step * 0.5);
-        y += step;
+    <style>
+      canvas {
+        position: absolute;
+        margin: auto;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
       }
-      ctx.fillText(`${player1Score} | ${player2Score}`, x - 15, 35);
-      ctx.restore();
-    };
+    </style>
+  </head>
 
-    const update = () => {
-      ctx.fillStyle = "#000000";
+  <body>
+    <script src="./Classes.js"></script>
+    <script>
+      const Width = 700, Height = 557, pi = Math.PI;
+      const Up = 'ArrowUp', Down = 'ArrowDown', W = 'w', S = 's', Pause = 'p';
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = Width;
+      canvas.height = Height;
+      document.body.appendChild(canvas);
+      ctx.font = '20px Alpha';
+
+      const audioBeep = new Audio("./assets/beep.wav");
+
+      let player1Score = 0, player2Score = 0;
+      const keystate = {};
       
-      player1.update();
-      player2.update();
-      ball.update(player1, player2);
-    };
+      const player1 = new User(keystate, W, S), player2 = new User(keystate, Up, Down)
+      const ball = new Ball();
+      
+      const init = () => {
+        player1.x = player1.width;
+        player1.y = (Height - player1.height) / 2;
 
-    const main = () => {
-      console.log(`Player 1: ${player1Score}; Player 2: ${player2Score}`);
+        player2.x = Width - (player1.width + player2.width);
+        player2.y = (Height - player2.height) / 2;
 
-      document.addEventListener("keydown", (e) => keystate[e.key] = true);
-      document.addEventListener("keyup", (e) => delete keystate[e.key]);
-
-      init();
-
-      const loop = () => {
-        update();
-        draw();
-
-        let req = window.requestAnimationFrame(loop, canvas);
-		    let cAF;
-		  		//console.log(keystate[Pause]);
-		    if (keystate[Pause]) {
-			  cAF = window.cancelAnimationFrame(req);
-			  console.log(`entered if keypaused; keystate: ${keystate[Pause]}`);
-			  
-			  /*if (keystate[Pause]) {
-				  req = window.requestAnimationFrame(loop, canvas);
-				  console.log(`entered if keypaused again; request anim frame`);
-			  }*/
-		    }
-        /*if (keystate[Pause] && cAF == undefined) {
-          req = window.requestAnimationFrame(loop, canvas);
-          console.log("entered if keypause and caf undefined");
-        }*/
+        ball.serve(1, player1, player2);
       };
-      req = window.requestAnimationFrame(loop, canvas);
 
-    }
+      const draw = () => {
+        ctx.fillRect(0, 0, Width, Height);
+        ctx.save();
+        ctx.fillStyle = "#ffffff";
 
-    main();
-  </script>
-</body>
+        player1.draw();
+        player2.draw();
+        ball.draw();
+
+        const w = 4, x = (Width - w) * 0.5, step = Height / 20;
+        let y = 0;
+        while (y < Height) {
+          ctx.fillRect(x, y + step * 0.25, w, step * 0.5);
+          y += step;
+        }
+        ctx.fillText(`${player1Score} | ${player2Score}`, x - 15, 35);
+        ctx.restore();
+      };
+
+      const update = () => {
+        ctx.fillStyle = "#000000";
+        
+        player1.update();
+        player2.update();
+        ball.update(player1, player2);
+      };
+
+      const main = () => {
+        console.log(`Player 1: ${player1Score}; Player 2: ${player2Score}`);
+
+        document.addEventListener("keydown", (e) => keystate[e.key] = true);
+        document.addEventListener("keyup", (e) => delete keystate[e.key]);
+
+        init();
+
+        const loop = () => {
+          update();
+          draw();
+
+          let req = window.requestAnimationFrame(loop, canvas);
+          let cAF;
+            //console.log(keystate[Pause]);
+          if (keystate[Pause]) {
+          cAF = window.cancelAnimationFrame(req);
+          console.log(`entered if keypaused; keystate: ${keystate[Pause]}`);
+          
+          /*if (keystate[Pause]) {
+            req = window.requestAnimationFrame(loop, canvas);
+            console.log(`entered if keypaused again; request anim frame`);
+          }*/
+          }
+          /*if (keystate[Pause] && cAF == undefined) {
+            req = window.requestAnimationFrame(loop, canvas);
+            console.log("entered if keypause and caf undefined");
+          }*/
+        };
+        req = window.requestAnimationFrame(loop, canvas);
+
+      }
+
+      main();
+    </script>
+  </body>
 </html>
