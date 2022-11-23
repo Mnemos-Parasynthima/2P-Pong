@@ -17,140 +17,68 @@
   </style>
 </head>
 
-<body> <!-- onmousemove="showCoords(event)" -->
+<body>
+  <script src="./Classes.js"></script>
   <script>
-    const wdth = 700, hght = 500, pi = Math.PI;
-    const upArrow = 38, downArrow = 40, WKey = 87, SKey = 83, pauseKey = 80;
-    let p1Score = 0, p2Score = 0;
-
-	const canvas = document.createElement("canvas");
-    canvas.width = wdth;
-    canvas.height = hght;
+    const Width = 700, Height = 557, pi = Math.PI;
+    const Up = 'ArrowUp', Down = 'ArrowDown', W = 'w', S = 's', Pause = 'p';
+    const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    canvas.width = Width;
+    canvas.height = Height;
     document.body.appendChild(canvas);
     ctx.font = '20px Alpha';
-	  
-    class Player {
-      constructor(x, y, w, h, hght) { //Maybe add color???
-        this.x = x;
-        this.y = y;
-        this.width = w;
-        this.height = h
+
+    const audioBeep = new Audio("./assets/beep.wav");
+
+    let player1Score = 0, player2Score = 0;
+    const keystate = {};
+    
+    const player1 = new User(keystate, W, S), player2 = new User(keystate, Up, Down)
+    const ball = new Ball();
+    
+    const init = () => {
+      player1.x = player1.width;
+      player1.y = (Height - player1.height) / 2;
+
+      player2.x = Width - (player1.width + player2.width);
+      player2.y = (Height - player2.height) / 2;
+
+      ball.serve(1, player1, player2);
+    };
+
+    const draw = () => {
+      ctx.fillRect(0, 0, Width, Height);
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+
+      player1.draw();
+      player2.draw();
+      ball.draw();
+
+      const w = 4, x = (Width - w) * 0.5, step = Height / 20;
+      let y = 0;
+      while (y < Height) {
+        ctx.fillRect(x, y + step * 0.25, w, step * 0.5);
+        y += step;
       }
+      ctx.fillText(`${player1Score} | ${player2Score}`, x - 15, 35);
+      ctx.restore();
+    };
 
-      draw() {
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-      }
-    }
+    const update = () => {
+      ctx.fillStyle = "#000000";
+      
+      player1.update();
+      player2.update();
+      ball.update(player1, player2);
+    };
 
-    //sets player info
-    class User1 extends Player {
-      constructor(x, y, w, h, hght) {
-        super(x, y, w, h, hght);
-      }
+    const main = () => {
+      console.log(`Player 1: ${player1Score}; Player 2: ${player2Score}`);
 
-      update() {
-        if (keystate[WKey]) this.y -= 7;
-		    if (keystate[SKey]) this.y += 7;
-        this.y = Math.max(Math.min(this.y, hght - this.height), 0);
-      }
-    }
-    class User2 extends Player {
-      constructor(x, y, w, h, hght) {
-        super(x, y, w, h, hght);
-      }
-
-      update() {
-        if (keystate[upArrow]) this.y -= 7;
-        if (keystate[downArrow]) this.y += 7;
-		    this.y = Math.max(Math.min(this.y, hght - this.height), 0);
-      }
-    }
-    const user1 = new User1(null, null, 20, 100, hght);
-    const user2 = new User2(null, null, 20, 100, hght);
-
-    //sets ball info
-	class Ball {
-		constructor() {
-			this.x = null;
-			this.y = null;
-			this.vel = null;
-			this.side = 20;
-			this.speed = 8
-		}
-		
-		serve(side) {
-			let r = Math.random();
-			this.x = side === 1 ? user1.x + user1.width : user2.x - this.side;
-			this.y = (hght - this.side) * r;
-			
-			let phi = 0.1 * pi * (1 - 2 * r);
-			this.vel = {
-				x: side * this.speed * Math.cos(phi),
-				y: this.speed * Math.sin(phi)
-			}
-		}
-		
-		update() {
-			//update position with current velocity
-      this.x += this.vel.x;
-			this.y += this.vel.y;
-			// check if out of the canvas in the y direction
-			if (0 > this.y || this.y + this.side > hght) {
-			  let offset = this.vel.y < 0 ?
-				0 - this.y : hght - (this.y + this.side);
-			  this.y += 2 * offset;
-			  this.vel.y *= -1;
-			}
-
-			const AABBIntersect = (ax, ay, aw, ah, bx, by, bw, bh) => ax < bx + bw && ay < by + bh && bx < ax + aw && by < ay + ah;
-
-			let pdle = this.vel.x < 0 ? user1 : user2;
-			if (AABBIntersect(pdle.x, pdle.y, pdle.width, pdle.height,
-			  this.x, this.y, this.side, this.side)) {
-			  // set the x position and calculate reflection angle
-			  this.x = pdle === user1 ?
-				user1.x + user1.width : user2.x - this.side;
-			  let n = (this.y + this.side - pdle.y)
-				/ (pdle.height + this.side);
-			  let phi = 0.25 * pi * (2 * n - 1);
-			  // calculate smash value and update velocity
-			  let smash = Math.abs(phi) > 0.2 * pi ? 1.5 : 1;
-			  this.vel.x = smash * (pdle === user1 ? 1 : -1)
-				* this.speed * Math.cos(phi);
-			  this.vel.y = smash * this.speed * Math.sin(phi);
-			}
-			//resets the ball when ball is outside of the canvas
-			//in the x direction
-			if (0 > this.x + this.side || this.x > wdth) {
-			  this.serve(pdle === user1 ? 1 : -1);
-			  //sets the score according to the x direction
-			  if (this.x > wdth) {
-				p1Sscore++;
-				console.log(`"Player 1: ${p1Score}`);
-			  } else if (this.x < 333) {
-				p2Score++;
-				console.log(`"Player 2: ${p2Score}`);
-			  }
-			}
-		}
-		
-		draw() {
-			ctx.fillRect(this.x, this.y, this.side, this.side);
-		}
-	}
-	const ball = new Ball();
-	
-    function main() {
-      console.log(`Player 1: ${p1Score}; Player 2: ${p2Score}`);
-
-      keystate = {};
-      document.addEventListener("keydown", function (evt) {
-        keystate[evt.keyCode] = true;
-      });
-      document.addEventListener("keyup", function (evt) {
-        delete keystate[evt.keyCode];
-      });
+      document.addEventListener("keydown", (e) => keystate[e.key] = true);
+      document.addEventListener("keyup", (e) => delete keystate[e.key]);
 
       init();
 
@@ -159,77 +87,27 @@
         draw();
 
         let req = window.requestAnimationFrame(loop, canvas);
-		let cAF;
-		  		//console.log(keystate[pauseKey]);
-		  if (keystate[pauseKey]) {
+		    let cAF;
+		  		//console.log(keystate[Pause]);
+		    if (keystate[Pause]) {
 			  cAF = window.cancelAnimationFrame(req);
-			  console.log(`entered if keypaused; keystate: ${keystate[pauseKey]}`);
+			  console.log(`entered if keypaused; keystate: ${keystate[Pause]}`);
 			  
-			  /*if (keystate[pauseKey]) {
+			  /*if (keystate[Pause]) {
 				  req = window.requestAnimationFrame(loop, canvas);
 				  console.log(`entered if keypaused again; request anim frame`);
 			  }*/
-		  }
-		  /*if (keystate[pauseKey] && cAF == undefined) {
-			  req = window.requestAnimationFrame(loop, canvas);
-			  console.log("entered if keypause and caf undefined");
-		  }*/
+		    }
+        /*if (keystate[Pause] && cAF == undefined) {
+          req = window.requestAnimationFrame(loop, canvas);
+          console.log("entered if keypause and caf undefined");
+        }*/
       };
       req = window.requestAnimationFrame(loop, canvas);
 
     }
 
-    function init() {
-      user1.x = user1.width;
-      user1.y = (hght - user1.height) / 2;
-
-      user2.x = wdth - (user1.width + user2.width);
-      user2.y = (hght - user2.height) / 2;
-
-      ball.serve(1);
-    }
-
-    function draw() {
-      ctx.fillRect(0, 0, wdth, hght);
-
-      ctx.save();
-
-      ctx.fillStyle = "#ffffff";
-
-      ball.draw();
-      user1.draw();
-      user2.draw();
-      var w = 4;
-      var x = (wdth - w) * 0.5;
-      var y = 0;
-      var step = hght / 15; //makes the middle, higher num., more lines
-      while (y < hght) {
-        ctx.fillRect(x, y + step * 0.25, w, step * 0.5);
-        y += step;
-      }
-
-      ctx.restore();
-    }
-
-    function update() {
-      //ctx.fillStyle = "#000000";
-      //ctx.fillText(" 524 | 568 ",  wdth / 2, 45);
-      //ctx.fillText(pS + " | " + aiS,  wdth / 2, 45);
-      ball.update();
-      user1.update();
-      user2.update();
-    }
-	
     main();
-
-    /*function showCoords(event) {
-      let x = event.clientX;
-      let y = event.clientY;
-      let coor = `X coords: ${x}, Y coords: ${y}`;
-      document.getElementById("Coords").innerHTML = coor;
-    }*/
   </script>
-  <p id="Coords"></p>
 </body>
-
 </html>
